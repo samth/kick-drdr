@@ -12,17 +12,18 @@
 (define (main-process)
   (define lines (regexp-split "\n" (with-output-to-string (lambda () (system "ps axf")))))
   (define procs (filter (lambda (l) (regexp-match cmd l)) lines))
-  (define pids (map (lambda (l) (define d (regexp-match #px"\\w*\\d+" l)) (and d (string->number d))) procs))
+  (define pids (map (lambda (l) (define d (regexp-match #px"\\w*\\d+" l)) (and (pair? d) (string->number (car d)))) procs))
   pids)
 
 (define (kill pid)
-  (display ">>>"
-  (displayln  (format "kill -9 ~a" pid))))
+  (display ">>> ")
+  (displayln  (format "kill -9 ~a" pid))
+  (system (format "kill -9 ~a" pid)))
 
 
 (define (start req)
   (define p-token (get-binding 'token req))
-  (unless (member tokens p-token)
+  (unless (member p-token tokens)
     (error 'restart-drdr "bad token: ~a ~a" tokens p-token))
   (printf ">>> restarting drdr\n")
   (define pids (main-process))
