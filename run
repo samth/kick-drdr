@@ -1,4 +1,4 @@
 #!/bin/sh -e
 
 echo "Running DrDr Kicker"
-exec ../racket/bin/racket main.rkt
+exec racket -l kick-drdr
