@@ -39,6 +39,9 @@
   (displayln cmd)
   (system cmd))
 
+(define (kill-dbus)
+  (system "killall -9 dbus-daemon"))
+
 
 (define (start req)
   (define p-token (get-binding 'token req))
@@ -49,6 +52,7 @@
   (define kids (append-map children pids))
   (unless (andmap number? (append pids kids))
     (error 'restart-drdr "bad children: ~a" kids))
+  (kill-dbus)
   (kill (append pids kids))
   (response/full 200 #"Okay" (current-seconds)
                  #"application/json" null
