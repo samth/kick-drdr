@@ -8,10 +8,13 @@
 (define tokens (file->lines "token"))
 
 (define cmd "racket -t main")
+(define framework-cmd #rx"framework/tests/framework-test-engine.rkt")
 
 (define (main-process)
   (define lines (regexp-split "\n" (with-output-to-string (lambda () (system "ps axf")))))
-  (define procs (filter (lambda (l) (regexp-match cmd l)) lines))
+  (define procs (filter (lambda (l) (or (regexp-match cmd l)
+                                        (regexp-match framework-cmd l)))
+                        lines))
   (define pids (map (lambda (l) (define d (regexp-match #px"\\w*\\d+" l)) (and (pair? d) (string->number (car d)))) procs))
   pids)
 
