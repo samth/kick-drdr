@@ -3,9 +3,14 @@
 (require web-server/servlet
          web-server/servlet-env
          web-server/page
+         net/url
          json)
 
+(define (post-as-slackbot bs)
+  (post-pure-port (string->url (format "'https://the-plt.slack.com/services/hooks/slackbot?token=~a&channel=%23general" slackbot-token)) bs))
+
 (define tokens (file->lines "token"))
+(define slackbot-token (file->string "slackbot-token"))
 
 (define cmd "racket -t main")
 (define framework-cmd #rx"framework/tests/framework-test-engine.rkt")
@@ -58,9 +63,13 @@
     (error 'restart-drdr "bad children: ~a" kids))
   (kill-dbus)
   (kill (append pids kids))
+  (define msg (string->bytes/utf-8 
+               (format "~a just ran `/kick-drdr`\nDrDr has been kicked, pids were ~a."
+                       (list framework-pids pids))))
+  (post-as-slackbot msg)
   (response/full 200 #"Okay" (current-seconds)
                  #"application/json" null
-                 (list (string->bytes/utf-8 (format "DrDr has been kicked, pids were ~a." (list framework-pids pids))))))
+                 (list msg)))
 
 (serve/servlet 
  start
