@@ -49,6 +49,7 @@
 
 (define (start req)
   (define p-token (get-binding 'token req))
+  (define user (get-binding 'user_name req))
   (unless (member p-token tokens)
     (error 'restart-drdr "bad token: ~a ~a" tokens p-token))
   (printf ">>> restarting drdr\n")
@@ -65,7 +66,7 @@
   (kill (append pids kids))
   (define msg (string->bytes/utf-8 
                (format "~a just ran `/kick-drdr`\nDrDr has been kicked, pids were ~a."
-                       (list framework-pids pids))))
+                       user (list framework-pids pids))))
   (post-as-slackbot msg)
   (response/full 200 #"Okay" (current-seconds)
                  #"application/json" null
