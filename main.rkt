@@ -10,10 +10,9 @@
 (define cmd "racket -t main")
 (define framework-cmd #rx"framework/tests/framework-test-engine.rkt")
 
-(define (main-process)
+(define (main-process cmd)
   (define lines (regexp-split "\n" (with-output-to-string (lambda () (system "ps axf")))))
-  (define procs (filter (lambda (l) (or (regexp-match cmd l)
-                                        (regexp-match framework-cmd l)))
+  (define procs (filter (lambda (l) (regexp-match cmd l))
                         lines))
   (define pids (map (lambda (l) (define d (regexp-match #px"\\w*\\d+" l)) (and (pair? d) (string->number (car d)))) procs))
   pids)
@@ -48,7 +47,12 @@
   (unless (member p-token tokens)
     (error 'restart-drdr "bad token: ~a ~a" tokens p-token))
   (printf ">>> restarting drdr\n")
-  (define pids (main-process))
+  (define framework-pids (main-process framework-cmd))
+  (printf ">>> first killing framework tests ~a" framework-pids)
+  (kill framework-pids)
+  (sleep 1)
+  (printf ">>> then killing everything")
+  (define pids (main-process cmd))
   (define kids (append-map children pids))
   (unless (andmap number? (append pids kids))
     (error 'restart-drdr "bad children: ~a" kids))
@@ -56,7 +60,7 @@
   (kill (append pids kids))
   (response/full 200 #"Okay" (current-seconds)
                  #"application/json" null
-                 (list (string->bytes/utf-8 (format "DrDr has been kicked, pids were ~a." pids)))))
+                 (list (string->bytes/utf-8 (format "DrDr has been kicked, pids were ~a." (list framework-pids pids))))))
 
 (serve/servlet 
  start
